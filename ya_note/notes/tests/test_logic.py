@@ -63,7 +63,7 @@ class TestNoteCreation(TestCase):
             response,
             'form',
             'slug',
-            'same-slug - такой slug уже существует,'
+            'same-slug - такой slug уже существует, '
             'придумайте уникальное значение!'
         )
 
