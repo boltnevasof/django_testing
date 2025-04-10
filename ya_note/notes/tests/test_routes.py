@@ -41,7 +41,9 @@ class TestRoutes(TestCase):
             ('notes:delete', (cls.note.slug,)),
         )
 
-        cls.protected_urls = cls.urls_for_authorized + cls.urls_for_detail_access
+        cls.protected_urls = (
+            cls.urls_for_authorized + cls.urls_for_detail_access
+        )
 
     def test_home_available_for_anonymous(self):
         """Главная доступна анониму."""

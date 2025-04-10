@@ -48,7 +48,9 @@ def test_comment_edit_delete_access_for_different_users(
     'name',
     ('news:edit', 'news:delete'),
 )
-def test_redirect_for_anonymous_user_on_comment_edit_delete(client, comment, name):
+def test_redirect_for_anonymous_user_on_comment_edit_delete(
+    client, comment, name
+):
     url = reverse(name, args=(comment.pk,))
     login_url = reverse('users:login')
     expected_redirect = f'{login_url}?next={url}'
