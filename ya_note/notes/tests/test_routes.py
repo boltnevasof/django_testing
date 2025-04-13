@@ -1,88 +1,53 @@
 from http import HTTPStatus
-
-from django.test import TestCase
 from django.urls import reverse
-from django.contrib.auth import get_user_model
 
-from notes.models import Note
+from .test_urls import (
+    home_url, login_url, logout_url, signup_url,
+    detail_url, edit_url, delete_url
+)
+from .test_base import BaseTestCase
 
-User = get_user_model()
 
+class TestRoutes(BaseTestCase):
+    def test_all_status_codes(self):
+        """Контроль всех кодов возврата для разных клиентов."""
+        cases = [
+            # Публичные страницы
+            (self.client, home_url(), HTTPStatus.OK),
+            (self.client, login_url(), HTTPStatus.OK),
+            (self.client, logout_url(), HTTPStatus.OK),
+            (self.client, signup_url(), HTTPStatus.OK),
 
-class TestRoutes(TestCase):
+            # Защищённые — для автора
+            (self.authorized_client, reverse('notes:list'), HTTPStatus.OK),
+            (self.authorized_client, reverse('notes:success'), HTTPStatus.OK),
+            (self.authorized_client, reverse('notes:add'), HTTPStatus.OK),
+            (self.authorized_client, detail_url(), HTTPStatus.OK),
+            (self.authorized_client, edit_url(), HTTPStatus.OK),
+            (self.authorized_client, delete_url(), HTTPStatus.OK),
 
-    @classmethod
-    def setUpTestData(cls):
-        cls.author = User.objects.create_user(
-            username='author',
-            password='pass'
-        )
-        cls.other_user = User.objects.create_user(
-            username='other',
-            password='pass'
-        )
+            # Защищённые — для другого пользователя
+            (self.other_client, detail_url(), HTTPStatus.NOT_FOUND),
+            (self.other_client, edit_url(), HTTPStatus.NOT_FOUND),
+            (self.other_client, delete_url(), HTTPStatus.NOT_FOUND),
+        ]
+        for client, url, expected in cases:
+            with self.subTest(url=url):
+                self.assertEqual(client.get(url).status_code, expected)
 
-        cls.note = Note.objects.create(
-            title='Тестовая заметка',
-            text='Текст',
-            author=cls.author,
-            slug='test-slug'
-        )
-
-        cls.urls_for_authorized = (
-            ('notes:list', None),
-            ('notes:success', None),
-            ('notes:add', None),
-        )
-
-        cls.urls_for_detail_access = (
-            ('notes:detail', (cls.note.slug,)),
-            ('notes:edit', (cls.note.slug,)),
-            ('notes:delete', (cls.note.slug,)),
-        )
-
-        cls.protected_urls = (
-            cls.urls_for_authorized + cls.urls_for_detail_access
-        )
-
-    def test_home_available_for_anonymous(self):
-        """Главная доступна анониму."""
-        url = reverse('notes:home')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-
-    def test_auth_only_pages_available_for_author(self):
-        """Автору доступны защищённые страницы."""
-        self.client.force_login(self.author)
-        for name, args in self.protected_urls:
-            with self.subTest(name=name):
-                url = reverse(name, args=args)
-                response = self.client.get(url)
-                self.assertEqual(response.status_code, HTTPStatus.OK)
-
-    def test_auth_only_pages_unavailable_for_other_user(self):
-        """Другому пользователю недоступны detail/edit/delete — 404."""
-        self.client.force_login(self.other_user)
-        for name, args in self.urls_for_detail_access:
-            with self.subTest(name=name):
-                url = reverse(name, args=args)
-                response = self.client.get(url)
-                self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-
-    def test_auth_only_pages_redirect_for_anonymous(self):
+    def test_redirects_for_anonymous(self):
         """Аноним перенаправляется на логин со всех защищённых страниц."""
         login_url = reverse('users:login')
-        for name, args in self.protected_urls:
-            with self.subTest(name=name):
-                url = reverse(name, args=args)
+        protected_urls = [
+            reverse('notes:list'),
+            reverse('notes:success'),
+            reverse('notes:add'),
+            detail_url(),
+            edit_url(),
+            delete_url(),
+        ]
+        for url in protected_urls:
+            with self.subTest(url=url):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.FOUND)
-                self.assertTrue(response.url.startswith(login_url))
-
-    def test_public_auth_pages_available(self):
-        """Страницы логина, регистрации и выхода доступны всем."""
-        for name in ('users:login', 'users:signup', 'users:logout'):
-            with self.subTest(name=name):
-                url = reverse(name)
-                response = self.client.get(url)
-                self.assertEqual(response.status_code, HTTPStatus.OK)
+                self.assertTrue(response.url.startswith(f'{login_url}?next='))

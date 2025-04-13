@@ -52,6 +52,7 @@ class NoteDelete(NoteBase, generic.DeleteView):
 class NotesList(NoteBase, generic.ListView):
     """Список всех заметок пользователя."""
     template_name = 'notes/list.html'
+    paginate_by = 10
 
 
 class NoteDetail(NoteBase, generic.DetailView):

@@ -1,9 +1,37 @@
+from datetime import timedelta
+
 import pytest
 from django.test.client import Client
-from news.models import News, Comment
-
-from datetime import timedelta
 from django.utils import timezone
+
+from news.models import Comment, News
+from django.conf import settings
+from django.urls import reverse
+
+
+@pytest.fixture
+def login_url():
+    return reverse('users:login')
+
+
+@pytest.fixture
+def comment_edit_url(comment):
+    return reverse('news:edit', args=[comment.pk])
+
+
+@pytest.fixture
+def comment_delete_url(comment):
+    return reverse('news:delete', args=[comment.pk])
+
+
+@pytest.fixture
+def home_url():
+    return reverse('news:home')
+
+
+@pytest.fixture
+def news_detail_url(news):
+    return reverse('news:detail', args=[news.pk])
 
 
 @pytest.fixture
@@ -49,22 +77,32 @@ def comment(author, news):
 
 @pytest.fixture
 def news_bulk():
+    news_list = []
     now = timezone.now()
-    for i in range(15):  # Создаём больше 10, чтобы проверить ограничение
-        News.objects.create(
+    for i in range(settings.NEWS_COUNT_ON_HOME_PAGE + 5):
+        news_list.append(News(
             title=f'Новость {i}',
             text='Текст',
             date=now - timedelta(days=i)
-        )
+        ))
+    News.objects.bulk_create(news_list)
 
 
 @pytest.fixture
 def comments_bulk(news, author):
-    now = timezone.now()
     for i in range(3):
         Comment.objects.create(
             news=news,
             author=author,
             text=f'Комментарий {i}',
-            created=now + timedelta(minutes=i)
         )
+
+
+@pytest.fixture
+def logout_url():
+    return reverse('users:logout')
+
+
+@pytest.fixture
+def signup_url():
+    return reverse('users:signup')

@@ -1,58 +1,60 @@
-from http import HTTPStatus
 import pytest
-from django.urls import reverse
-from pytest_django.asserts import assertRedirects
+from http import HTTPStatus
 from pytest_lazyfixture import lazy_fixture
+from pytest_django.asserts import assertRedirects
 
 
-@pytest.mark.django_db
+pytestmark = pytest.mark.django_db
+
+
 @pytest.mark.parametrize(
-    'name',
-    ('news:home', 'users:login', 'users:logout', 'users:signup')
+    'url_fixture, client_fixture, expected_status',
+    [
+        # Публичные страницы
+        (lazy_fixture('home_url'), lazy_fixture('client'), HTTPStatus.OK),
+        (lazy_fixture('login_url'), lazy_fixture('client'), HTTPStatus.OK),
+        (lazy_fixture('logout_url'), lazy_fixture('client'), HTTPStatus.OK),
+        (lazy_fixture('signup_url'), lazy_fixture('client'), HTTPStatus.OK),
+
+        # Детали новости
+        (lazy_fixture('news_detail_url'),
+         lazy_fixture('client'),
+         HTTPStatus.OK
+         ),
+
+        # Доступ к редактированию и удалению комментариев
+        (lazy_fixture('comment_edit_url'),
+         lazy_fixture('author_client'),
+         HTTPStatus.OK
+         ),
+        (lazy_fixture('comment_delete_url'),
+         lazy_fixture('author_client'),
+         HTTPStatus.OK
+         ),
+        (lazy_fixture('comment_edit_url'),
+         lazy_fixture('not_author_client'),
+         HTTPStatus.NOT_FOUND
+         ),
+        (lazy_fixture('comment_delete_url'),
+         lazy_fixture('not_author_client'),
+         HTTPStatus.NOT_FOUND
+         ),
+    ]
 )
-def test_public_pages_availability_for_anonymous_user(client, name):
-    url = reverse(name)
-    response = client.get(url)
-    assert response.status_code == HTTPStatus.OK
-
-
-@pytest.mark.django_db
-def test_news_detail_page_is_available_for_anonymous_user(client, news):
-    url = reverse('news:detail', args=(news.pk,))
-    response = client.get(url)
-    assert response.status_code == HTTPStatus.OK
-
-
-@pytest.mark.django_db
-@pytest.mark.parametrize(
-    'name',
-    ('news:edit', 'news:delete'),
-)
-@pytest.mark.parametrize(
-    'client_fixture, expected_status',
-    (
-        (lazy_fixture('author_client'), HTTPStatus.OK),
-        (lazy_fixture('not_author_client'), HTTPStatus.NOT_FOUND),
-    )
-)
-def test_comment_edit_delete_access_for_different_users(
-    client_fixture, name, comment, expected_status
+def test_status_codes_for_different_pages(
+    url_fixture, client_fixture, expected_status
 ):
-    url = reverse(name, args=(comment.pk,))
-    response = client_fixture.get(url)
+    response = client_fixture.get(url_fixture)
     assert response.status_code == expected_status
 
 
-@pytest.mark.django_db
 @pytest.mark.parametrize(
-    'name',
-    ('news:edit', 'news:delete'),
+    'url_fixture',
+    (lazy_fixture('comment_edit_url'), lazy_fixture('comment_delete_url'))
 )
 def test_redirect_for_anonymous_user_on_comment_edit_delete(
-    client, comment, name
+    client, login_url, url_fixture
 ):
-    url = reverse(name, args=(comment.pk,))
-    login_url = reverse('users:login')
-    expected_redirect = f'{login_url}?next={url}'
-    response = client.get(url)
+    expected_redirect = f'{login_url}?next={url_fixture}'
+    response = client.get(url_fixture)
     assertRedirects(response, expected_redirect)
