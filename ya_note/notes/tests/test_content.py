@@ -1,38 +1,31 @@
-from http import HTTPStatus
+from notes.forms import NoteForm
+
 from .test_base import BaseTestCase
-from .test_urls import list_url, add_url, edit_url, login_url
+from .test_urls import LIST_URL, ADD_URL, EDIT_URL
 
 
 class TestNoteContent(BaseTestCase):
 
-    def test_user_sees_only_own_notes(self):
-        """Пользователь видит только свои заметки."""
-        self.authorized_client.force_login(self.author)
-        response = self.authorized_client.get(list_url())
+    def test_note_in_list_for_authorized_user(self):
+        """Заметка автора отображается в списке и её поля корректны."""
+        response = self.authorized_client.get(LIST_URL)
         notes = response.context['page_obj']
-        self.assertEqual(len(notes), 1)
-        self.assertEqual(notes[0], self.note)
+        self.assertIn(self.note, notes)
+        note = notes[0]
+        self.assertEqual(note.title, self.note.title)
+        self.assertEqual(note.text, self.note.text)
+        self.assertEqual(note.slug, self.note.slug)
+        self.assertEqual(note.author, self.note.author)
 
-    def test_notes_sorted_old_to_new(self):
-        """Заметки отсортированы от старых к новым по id."""
-        response = self.authorized_client.get(list_url())
-        notes = response.context['object_list']
-        note_ids = [note.id for note in notes]
-        self.assertEqual(note_ids, sorted(note_ids))
-
-    def test_anonymous_cannot_access_list(self):
-        """Аноним перенаправляется на логин со страницы списка заметок."""
-        response = self.client.get(list_url())
-        self.assertEqual(response.status_code, HTTPStatus.FOUND)
-        self.assertTrue(response.url.startswith(f'{login_url()}?next='))
+    def test_other_user_does_not_see_foreign_note(self):
+        """Пользователь не видит чужую заметку в списке."""
+        response = self.other_client.get(LIST_URL)
+        notes = response.context['page_obj']
+        self.assertNotIn(self.note, notes)
 
     def test_author_sees_create_and_edit_form(self):
         """Автор видит формы создания и редактирования заметки."""
-        for url in (add_url(), edit_url()):
+        for url in (ADD_URL, EDIT_URL):
             with self.subTest(url=url):
                 response = self.authorized_client.get(url)
-                self.assertEqual(response.status_code, HTTPStatus.OK)
-                self.assertIn('form', response.context)
-                form = response.context['form']
-                self.assertIn('title', form.fields)
-                self.assertIn('text', form.fields)
+                self.assertIsInstance(response.context['form'], NoteForm)

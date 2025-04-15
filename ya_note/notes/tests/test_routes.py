@@ -1,11 +1,10 @@
 from http import HTTPStatus
-from django.urls import reverse
 
-from .test_urls import (
-    home_url, login_url, logout_url, signup_url,
-    detail_url, edit_url, delete_url
-)
 from .test_base import BaseTestCase
+from .test_urls import (
+    HOME_URL, LOGIN_URL, LOGOUT_URL, SIGNUP_URL, LIST_URL,
+    SUCCESS_URL, ADD_URL, DETAIL_URL, EDIT_URL, DELETE_URL
+)
 
 
 class TestRoutes(BaseTestCase):
@@ -13,41 +12,45 @@ class TestRoutes(BaseTestCase):
         """Контроль всех кодов возврата для разных клиентов."""
         cases = [
             # Публичные страницы
-            (self.client, home_url(), HTTPStatus.OK),
-            (self.client, login_url(), HTTPStatus.OK),
-            (self.client, logout_url(), HTTPStatus.OK),
-            (self.client, signup_url(), HTTPStatus.OK),
+            (self.client, HOME_URL, HTTPStatus.OK),
+            (self.client, LOGIN_URL, HTTPStatus.OK),
+            (self.client, LOGOUT_URL, HTTPStatus.OK),
+            (self.client, SIGNUP_URL, HTTPStatus.OK),
 
             # Защищённые — для автора
-            (self.authorized_client, reverse('notes:list'), HTTPStatus.OK),
-            (self.authorized_client, reverse('notes:success'), HTTPStatus.OK),
-            (self.authorized_client, reverse('notes:add'), HTTPStatus.OK),
-            (self.authorized_client, detail_url(), HTTPStatus.OK),
-            (self.authorized_client, edit_url(), HTTPStatus.OK),
-            (self.authorized_client, delete_url(), HTTPStatus.OK),
+            (self.authorized_client, LIST_URL, HTTPStatus.OK),
+            (self.authorized_client, SUCCESS_URL, HTTPStatus.OK),
+            (self.authorized_client, ADD_URL, HTTPStatus.OK),
+            (self.authorized_client, DETAIL_URL, HTTPStatus.OK),
+            (self.authorized_client, EDIT_URL, HTTPStatus.OK),
+            (self.authorized_client, DELETE_URL, HTTPStatus.OK),
 
             # Защищённые — для другого пользователя
-            (self.other_client, detail_url(), HTTPStatus.NOT_FOUND),
-            (self.other_client, edit_url(), HTTPStatus.NOT_FOUND),
-            (self.other_client, delete_url(), HTTPStatus.NOT_FOUND),
+            (self.other_client, DETAIL_URL, HTTPStatus.NOT_FOUND),
+            (self.other_client, EDIT_URL, HTTPStatus.NOT_FOUND),
+            (self.other_client, DELETE_URL, HTTPStatus.NOT_FOUND),
+
+            # Аноним и защищённые страницы (ожидаем редирект)
+            (self.client, LIST_URL, HTTPStatus.FOUND),
+            (self.client, SUCCESS_URL, HTTPStatus.FOUND),
+            (self.client, ADD_URL, HTTPStatus.FOUND),
+            (self.client, DETAIL_URL, HTTPStatus.FOUND),
+            (self.client, EDIT_URL, HTTPStatus.FOUND),
+            (self.client, DELETE_URL, HTTPStatus.FOUND),
         ]
-        for client, url, expected in cases:
+        for client, url, expected_status in cases:
             with self.subTest(url=url):
-                self.assertEqual(client.get(url).status_code, expected)
+                response = client.get(url)
+                self.assertEqual(response.status_code, expected_status)
 
     def test_redirects_for_anonymous(self):
         """Аноним перенаправляется на логин со всех защищённых страниц."""
-        login_url = reverse('users:login')
+        login = LOGIN_URL
         protected_urls = [
-            reverse('notes:list'),
-            reverse('notes:success'),
-            reverse('notes:add'),
-            detail_url(),
-            edit_url(),
-            delete_url(),
+            LIST_URL, SUCCESS_URL, ADD_URL, DETAIL_URL, EDIT_URL, DELETE_URL
         ]
         for url in protected_urls:
             with self.subTest(url=url):
+                expected_redirect = f'{login}?next={url}'
                 response = self.client.get(url)
-                self.assertEqual(response.status_code, HTTPStatus.FOUND)
-                self.assertTrue(response.url.startswith(f'{login_url}?next='))
+                self.assertRedirects(response, expected_redirect)

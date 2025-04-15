@@ -1,45 +1,16 @@
 from django.urls import reverse
 
+# Константы
 SLUG = 'test-slug'
 
-CREATE_URL = reverse('notes:add')
+HOME_URL = reverse('notes:home')
+LOGIN_URL = reverse('users:login')
+LOGOUT_URL = reverse('users:logout')
+SIGNUP_URL = reverse('users:signup')
+LIST_URL = reverse('notes:list')
+ADD_URL = reverse('notes:add')
+SUCCESS_URL = reverse('notes:success')
 
-
-def home_url():
-    return reverse('notes:home')
-
-
-def login_url():
-    return reverse('users:login')
-
-
-def logout_url():
-    return reverse('users:logout')
-
-
-def signup_url():
-    return reverse('users:signup')
-
-
-def list_url():
-    return reverse('notes:list')
-
-
-def add_url():
-    return reverse('notes:add')
-
-
-def success_url():
-    return reverse('notes:success')
-
-
-def detail_url():
-    return reverse('notes:detail', args=[SLUG])
-
-
-def edit_url():
-    return reverse('notes:edit', args=[SLUG])
-
-
-def delete_url():
-    return reverse('notes:delete', args=[SLUG])
+DETAIL_URL = reverse('notes:detail', args=[SLUG])
+EDIT_URL = reverse('notes:edit', args=[SLUG])
+DELETE_URL = reverse('notes:delete', args=[SLUG])

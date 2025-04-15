@@ -1,5 +1,7 @@
 import pytest
+
 from django.conf import settings
+
 from news.forms import CommentForm
 
 pytestmark = pytest.mark.django_db
@@ -16,13 +18,6 @@ def test_comments_sorted_by_date(client, news_detail_url, comments_bulk):
     comments = response.context['object'].comment_set.all()
     created_dates = [comment.created for comment in comments]
     assert created_dates == sorted(created_dates)
-
-
-def test_comments_order_on_news_detail(client, news_detail_url, comments_bulk):
-    response = client.get(news_detail_url)
-    comments = list(response.context['object'].comment_set.all())
-    for i in range(1, len(comments)):
-        assert comments[i - 1].created <= comments[i].created
 
 
 def test_comment_form_for_authorized_user(author_client, news_detail_url):

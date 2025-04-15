@@ -1,6 +1,8 @@
-from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.test import TestCase
+
 from notes.models import Note
+
 
 User = get_user_model()
 
@@ -28,11 +30,5 @@ class BaseTestCase(TestCase):
         cls.form_data = {
             'title': 'Заголовок',
             'text': 'Текст заметки',
-            'slug': 'test-slug',
-        }
-
-        cls.form_data_updated = {
-            'title': 'Новое название',
-            'text': 'Обновлённый текст',
-            'slug': 'test-slug',
+            'slug': 'another-slug',
         }

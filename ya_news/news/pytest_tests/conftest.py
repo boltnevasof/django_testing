@@ -1,12 +1,12 @@
 from datetime import timedelta
 
 import pytest
+from django.conf import settings
 from django.test.client import Client
+from django.urls import reverse
 from django.utils import timezone
 
 from news.models import Comment, News
-from django.conf import settings
-from django.urls import reverse
 
 
 @pytest.fixture
@@ -77,25 +77,31 @@ def comment(author, news):
 
 @pytest.fixture
 def news_bulk():
-    news_list = []
     now = timezone.now()
-    for i in range(settings.NEWS_COUNT_ON_HOME_PAGE + 5):
-        news_list.append(News(
+    news_list = [
+        News(
             title=f'Новость {i}',
             text='Текст',
             date=now - timedelta(days=i)
-        ))
+        )
+        for i in range(settings.NEWS_COUNT_ON_HOME_PAGE + 5)
+    ]
     News.objects.bulk_create(news_list)
 
 
 @pytest.fixture
 def comments_bulk(news, author):
-    for i in range(3):
-        Comment.objects.create(
+    now = timezone.now()
+    comments = [
+        Comment(
             news=news,
             author=author,
             text=f'Комментарий {i}',
+            created=now + timedelta(minutes=i)
         )
+        for i in range(3)
+    ]
+    Comment.objects.bulk_create(comments)
 
 
 @pytest.fixture
@@ -106,3 +112,13 @@ def logout_url():
 @pytest.fixture
 def signup_url():
     return reverse('users:signup')
+
+
+@pytest.fixture
+def comment_edit_redirect_url(login_url, comment_edit_url):
+    return f'{login_url}?next={comment_edit_url}'
+
+
+@pytest.fixture
+def comment_delete_redirect_url(login_url, comment_delete_url):
+    return f'{login_url}?next={comment_delete_url}'
