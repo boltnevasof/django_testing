@@ -35,19 +35,23 @@ class TestNoteLogic(BaseTestCase):
     def test_slug_is_generated_if_empty(self):
         """Slug создаётся автоматически при отсутствии."""
         self.form_data.pop('slug')
+        notes_before = set(Note.objects.values_list('pk', flat=True))
+
         response = self.authorized_client.post(
             self.ADD_URL, data=self.form_data
         )
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
-        created_note = Note.objects.get(
-            author=self.author, title=self.form_data['title']
-        )
-        self.assertEqual(created_note.title, self.form_data['title'])
-        self.assertEqual(created_note.text, self.form_data['text'])
-        self.assertEqual(created_note.author, self.author)
+        notes_after = Note.objects.exclude(pk__in=notes_before)
+        self.assertEqual(notes_after.count(), 1)
+
+        note = notes_after.first()
         expected_slug = slugify(self.form_data['title'])
-        self.assertEqual(created_note.slug, expected_slug)
+
+        self.assertEqual(note.title, self.form_data['title'])
+        self.assertEqual(note.text, self.form_data['text'])
+        self.assertEqual(note.slug, expected_slug)
+        self.assertEqual(note.author, self.author)
 
     def test_slug_must_be_unique(self):
         """Два одинаковых slug запрещены."""
@@ -99,8 +103,15 @@ class TestNoteLogic(BaseTestCase):
 
     def test_not_author_cannot_delete_note(self):
         """Неавтор не может удалить чужую заметку."""
-        notes_count_before = Note.objects.count()
+        note_before = Note.objects.get(pk=self.note.pk)
+
         response = self.not_author_client.post(self.DELETE_URL)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        self.assertEqual(Note.objects.count(), notes_count_before)
+
         self.assertTrue(Note.objects.filter(pk=self.note.pk).exists())
+
+        note_after = Note.objects.get(pk=self.note.pk)
+        self.assertEqual(note_after.title, note_before.title)
+        self.assertEqual(note_after.text, note_before.text)
+        self.assertEqual(note_after.slug, note_before.slug)
+        self.assertEqual(note_after.author, note_before.author)

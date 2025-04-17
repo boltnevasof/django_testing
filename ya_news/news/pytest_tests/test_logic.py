@@ -10,29 +10,26 @@ from news.models import Comment
 pytestmark = pytest.mark.django_db
 
 COMMENT_FORM_DATA = {'text': 'Комментарий от автора'}
-BAD_COMMENT_DATA_TEMPLATE = 'Ты {}!'
+BAD_COMMENT_TEMPLATE = 'Ты {}!'
 
 
 def test_anonymous_user_cannot_post_comment(
-        client, news_detail_url, login_url
+        client, news_detail_url, login_url, comment_post_redirect_url
 ):
     """Анонимный пользователь не может отправить комментарий."""
-    expected_url = f'{login_url}?next={news_detail_url}'
     response = client.post(news_detail_url, data=COMMENT_FORM_DATA)
-    assertRedirects(response, expected_url)
+    assertRedirects(response, comment_post_redirect_url)
     assert Comment.objects.count() == 0
 
 
 def test_authorized_user_can_post_comment(
-        author_client, author, news_detail_url, news
+        author_client, author, news_detail_url, news, news_detail_comments_url
 ):
     """Авторизованный пользователь может отправить комментарий."""
-    expected_redirect = f'{news_detail_url}#comments'
     response = author_client.post(news_detail_url, data=COMMENT_FORM_DATA)
-    assertRedirects(response, expected_redirect)
+    assertRedirects(response, news_detail_comments_url)
 
-    comment = Comment.objects.filter(author=author, news=news).first()
-    assert comment is not None
+    comment = Comment.objects.get()
     assert comment.text == COMMENT_FORM_DATA['text']
     assert comment.author == author
     assert comment.news == news
@@ -43,8 +40,8 @@ def test_forbidden_word_not_allowed_in_comment(
         author_client, news_detail_url, bad_word
 ):
     """Комментарий с запрещённым словом не сохраняется."""
-    bad_data = {'text': BAD_COMMENT_DATA_TEMPLATE.format(bad_word)}
-    response = author_client.post(news_detail_url, data=bad_data)
+    bad_comment_data = {'text': BAD_COMMENT_TEMPLATE.format(bad_word)}
+    response = author_client.post(news_detail_url, data=bad_comment_data)
     assertFormError(response, 'form', 'text', WARNING)
     assert Comment.objects.count() == 0
 

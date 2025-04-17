@@ -131,3 +131,8 @@ def comment_delete_redirect_url(login_url, comment_delete_url):
 @pytest.fixture
 def news_detail_comments_url(news_detail_url):
     return f'{news_detail_url}#comments'
+
+
+@pytest.fixture
+def comment_post_redirect_url(login_url, news_detail_url):
+    return f'{login_url}?next={news_detail_url}'

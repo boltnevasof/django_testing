@@ -42,17 +42,15 @@ class TestRoutes(BaseTestCase):
 
     def test_redirects_for_anonymous(self):
         """Аноним перенаправляется на логин со всех защищённых страниц."""
-        login_url = self.LOGIN_URL
-        protected_urls = [
-            self.LIST_URL,
-            self.SUCCESS_URL,
-            self.ADD_URL,
-            self.DETAIL_URL,
-            self.EDIT_URL,
-            self.DELETE_URL,
+        protected_redirects = [
+            (self.LIST_URL, self.LOGIN_LIST_REDIRECT),
+            (self.SUCCESS_URL, self.LOGIN_SUCCESS_REDIRECT),
+            (self.ADD_URL, self.LOGIN_ADD_REDIRECT),
+            (self.DETAIL_URL, self.LOGIN_DETAIL_REDIRECT),
+            (self.EDIT_URL, self.LOGIN_EDIT_REDIRECT),
+            (self.DELETE_URL, self.LOGIN_DELETE_REDIRECT),
         ]
-        for url in protected_urls:
-            expected_redirect = f'{login_url}?next={url}'
+        for url, expected_redirect in protected_redirects:
             with self.subTest(url=url):
                 response = self.client.get(url)
                 self.assertRedirects(response, expected_redirect)

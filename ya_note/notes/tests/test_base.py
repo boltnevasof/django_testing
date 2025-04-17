@@ -4,6 +4,27 @@ from django.urls import reverse
 
 from notes.models import Note
 
+# Константы
+SLUG = 'test-slug'
+
+HOME_URL = reverse('notes:home')
+LOGIN_URL = reverse('users:login')
+LOGOUT_URL = reverse('users:logout')
+SIGNUP_URL = reverse('users:signup')
+LIST_URL = reverse('notes:list')
+ADD_URL = reverse('notes:add')
+SUCCESS_URL = reverse('notes:success')
+DETAIL_URL = reverse('notes:detail', args=[SLUG])
+EDIT_URL = reverse('notes:edit', args=[SLUG])
+DELETE_URL = reverse('notes:delete', args=[SLUG])
+
+LOGIN_LIST_REDIRECT = f'{LOGIN_URL}?next={LIST_URL}'
+LOGIN_SUCCESS_REDIRECT = f'{LOGIN_URL}?next={SUCCESS_URL}'
+LOGIN_ADD_REDIRECT = f'{LOGIN_URL}?next={ADD_URL}'
+LOGIN_DETAIL_REDIRECT = f'{LOGIN_URL}?next={DETAIL_URL}'
+LOGIN_EDIT_REDIRECT = f'{LOGIN_URL}?next={EDIT_URL}'
+LOGIN_DELETE_REDIRECT = f'{LOGIN_URL}?next={DELETE_URL}'
+
 User = get_user_model()
 
 
@@ -21,7 +42,7 @@ class BaseTestCase(TestCase):
             title='Тестовая заметка',
             text='Текст',
             author=cls.author,
-            slug='test-slug',
+            slug=SLUG,
         )
 
         cls.authorized_client = cls.client_class()
@@ -36,14 +57,20 @@ class BaseTestCase(TestCase):
             'slug': 'another-slug',
         }
 
-        cls.HOME_URL = reverse('notes:home')
-        cls.LOGIN_URL = reverse('users:login')
-        cls.LOGOUT_URL = reverse('users:logout')
-        cls.SIGNUP_URL = reverse('users:signup')
-        cls.LIST_URL = reverse('notes:list')
-        cls.ADD_URL = reverse('notes:add')
-        cls.SUCCESS_URL = reverse('notes:success')
+        cls.HOME_URL = HOME_URL
+        cls.LOGIN_URL = LOGIN_URL
+        cls.LOGOUT_URL = LOGOUT_URL
+        cls.SIGNUP_URL = SIGNUP_URL
+        cls.LIST_URL = LIST_URL
+        cls.ADD_URL = ADD_URL
+        cls.SUCCESS_URL = SUCCESS_URL
+        cls.DETAIL_URL = DETAIL_URL
+        cls.EDIT_URL = EDIT_URL
+        cls.DELETE_URL = DELETE_URL
 
-        cls.DETAIL_URL = reverse('notes:detail', args=[cls.note.slug])
-        cls.EDIT_URL = reverse('notes:edit', args=[cls.note.slug])
-        cls.DELETE_URL = reverse('notes:delete', args=[cls.note.slug])
+        cls.LOGIN_LIST_REDIRECT = LOGIN_LIST_REDIRECT
+        cls.LOGIN_SUCCESS_REDIRECT = LOGIN_SUCCESS_REDIRECT
+        cls.LOGIN_ADD_REDIRECT = LOGIN_ADD_REDIRECT
+        cls.LOGIN_DETAIL_REDIRECT = LOGIN_DETAIL_REDIRECT
+        cls.LOGIN_EDIT_REDIRECT = LOGIN_EDIT_REDIRECT
+        cls.LOGIN_DELETE_REDIRECT = LOGIN_DELETE_REDIRECT
