@@ -84,7 +84,7 @@ def news_bulk():
             text='Текст',
             date=now - timedelta(days=i)
         )
-        for i in range(settings.NEWS_COUNT_ON_HOME_PAGE + 5)
+        for i in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
     ]
     News.objects.bulk_create(news_list)
 
@@ -97,11 +97,15 @@ def comments_bulk(news, author):
             news=news,
             author=author,
             text=f'Комментарий {i}',
-            created=now + timedelta(minutes=i)
         )
         for i in range(3)
     ]
     Comment.objects.bulk_create(comments)
+
+    # Обновляем поле created отдельно
+    for i, comment in enumerate(Comment.objects.all()):
+        comment.created = now + timedelta(minutes=i)
+        comment.save(update_fields=['created'])
 
 
 @pytest.fixture
@@ -122,3 +126,8 @@ def comment_edit_redirect_url(login_url, comment_edit_url):
 @pytest.fixture
 def comment_delete_redirect_url(login_url, comment_delete_url):
     return f'{login_url}?next={comment_delete_url}'
+
+
+@pytest.fixture
+def news_detail_comments_url(news_detail_url):
+    return f'{news_detail_url}#comments'
