@@ -7,12 +7,9 @@ from .test_base import BaseTestCase
 
 
 class TestNoteLogic(BaseTestCase):
-
     def test_authorized_user_can_create_note(self):
         """Авторизованный пользователь может создать заметку."""
-        self.form_data['slug'] = 'new-slug'
         notes_before = set(Note.objects.values_list('pk', flat=True))
-
         response = self.authorized_client.post(
             self.ADD_URL, data=self.form_data
         )
@@ -30,50 +27,41 @@ class TestNoteLogic(BaseTestCase):
     def test_anonymous_user_cannot_create_note(self):
         """Анонимный пользователь не может создать заметку."""
         notes_before = set(Note.objects.values_list('pk', flat=True))
-
         response = self.client.post(self.ADD_URL, data=self.form_data)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
-
         notes_after = set(Note.objects.values_list('pk', flat=True))
         self.assertEqual(notes_before, notes_after)
 
     def test_slug_is_generated_if_empty(self):
         """Slug создаётся автоматически при отсутствии."""
         self.form_data.pop('slug')
-
         response = self.authorized_client.post(
             self.ADD_URL, data=self.form_data
         )
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
-        note = Note.objects.get(
+        created_note = Note.objects.get(
             author=self.author, title=self.form_data['title']
         )
-
-        self.assertEqual(note.title, self.form_data['title'])
-        self.assertEqual(note.text, self.form_data['text'])
-        self.assertEqual(note.author, self.author)
-
+        self.assertEqual(created_note.title, self.form_data['title'])
+        self.assertEqual(created_note.text, self.form_data['text'])
+        self.assertEqual(created_note.author, self.author)
         expected_slug = slugify(self.form_data['title'])
-        self.assertEqual(note.slug, expected_slug)
+        self.assertEqual(created_note.slug, expected_slug)
 
     def test_slug_must_be_unique(self):
         """Два одинаковых slug запрещены."""
-        self.form_data['slug'] = self.note.slug  # Совпадает с уже существующей
-
+        self.form_data['slug'] = self.note.slug
         notes_before = set(Note.objects.all())
-
         response = self.authorized_client.post(
             self.ADD_URL, data=self.form_data
         )
-
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertFormError(
             response, 'form', 'slug',
             f'{self.note.slug} - такой slug уже существует, '
             'придумайте уникальное значение!'
         )
-
         notes_after = set(Note.objects.all())
         self.assertSetEqual(notes_after, notes_before)
 
@@ -83,18 +71,18 @@ class TestNoteLogic(BaseTestCase):
             self.EDIT_URL, data=self.form_data
         )
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
-
         note = Note.objects.get(pk=self.note.pk)
         self.assertEqual(note.title, self.form_data['title'])
         self.assertEqual(note.text, self.form_data['text'])
         self.assertEqual(note.slug, self.form_data['slug'])
         self.assertEqual(note.author, self.note.author)
 
-    def test_other_user_cannot_edit_note(self):
-        """Другой пользователь не может редактировать чужую заметку."""
-        response = self.other_client.post(self.EDIT_URL, data=self.form_data)
+    def test_not_author_cannot_edit_note(self):
+        """Неавтор не может редактировать чужую заметку."""
+        response = self.not_author_client.post(
+            self.EDIT_URL, data=self.form_data
+        )
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-
         note = Note.objects.get(pk=self.note.pk)
         self.assertEqual(note.title, self.note.title)
         self.assertEqual(note.text, self.note.text)
@@ -104,21 +92,15 @@ class TestNoteLogic(BaseTestCase):
     def test_author_can_delete_note(self):
         """Автор может удалить свою заметку."""
         notes_count_before = Note.objects.count()
-
         response = self.authorized_client.post(self.DELETE_URL)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
-
-        notes_count_after = Note.objects.count()
-        self.assertEqual(notes_count_after, notes_count_before - 1)
+        self.assertEqual(Note.objects.count(), notes_count_before - 1)
         self.assertFalse(Note.objects.filter(pk=self.note.pk).exists())
 
-    def test_other_user_cannot_delete_note(self):
-        """Другой пользователь не может удалить чужую заметку."""
+    def test_not_author_cannot_delete_note(self):
+        """Неавтор не может удалить чужую заметку."""
         notes_count_before = Note.objects.count()
-
-        response = self.other_client.post(self.DELETE_URL)
+        response = self.not_author_client.post(self.DELETE_URL)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-
-        notes_count_after = Note.objects.count()
-        self.assertEqual(notes_count_after, notes_count_before)
+        self.assertEqual(Note.objects.count(), notes_count_before)
         self.assertTrue(Note.objects.filter(pk=self.note.pk).exists())

@@ -22,9 +22,9 @@ class TestRoutes(BaseTestCase):
             (self.authorized_client, self.DELETE_URL, HTTPStatus.OK),
 
             # Защищённые для другого пользователя
-            (self.other_client, self.DETAIL_URL, HTTPStatus.NOT_FOUND),
-            (self.other_client, self.EDIT_URL, HTTPStatus.NOT_FOUND),
-            (self.other_client, self.DELETE_URL, HTTPStatus.NOT_FOUND),
+            (self.not_author_client, self.DETAIL_URL, HTTPStatus.NOT_FOUND),
+            (self.not_author_client, self.EDIT_URL, HTTPStatus.NOT_FOUND),
+            (self.not_author_client, self.DELETE_URL, HTTPStatus.NOT_FOUND),
 
             # Аноним и защищённые страницы (ожидаем редирект)
             (self.client, self.LIST_URL, HTTPStatus.FOUND),
@@ -34,6 +34,7 @@ class TestRoutes(BaseTestCase):
             (self.client, self.EDIT_URL, HTTPStatus.FOUND),
             (self.client, self.DELETE_URL, HTTPStatus.FOUND),
         ]
+
         for client, url, expected_status in cases:
             with self.subTest(client=client, url=url, status=expected_status):
                 response = client.get(url)
@@ -41,7 +42,17 @@ class TestRoutes(BaseTestCase):
 
     def test_redirects_for_anonymous(self):
         """Аноним перенаправляется на логин со всех защищённых страниц."""
-        for url, expected_redirect in self.LOGIN_REDIRECTS:
+        login_url = self.LOGIN_URL
+        protected_urls = [
+            self.LIST_URL,
+            self.SUCCESS_URL,
+            self.ADD_URL,
+            self.DETAIL_URL,
+            self.EDIT_URL,
+            self.DELETE_URL,
+        ]
+        for url in protected_urls:
+            expected_redirect = f'{login_url}?next={url}'
             with self.subTest(url=url):
                 response = self.client.get(url)
                 self.assertRedirects(response, expected_redirect)

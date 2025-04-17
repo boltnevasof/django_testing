@@ -9,16 +9,22 @@ class TestNoteContent(BaseTestCase):
         """Заметка автора отображается в списке и её поля корректны."""
         response = self.authorized_client.get(self.LIST_URL)
         notes = response.context['page_obj']
+
         self.assertIn(self.note, notes)
-        note = next(note for note in notes if note.pk == self.note.pk)
-        self.assertEqual(note.title, self.note.title)
-        self.assertEqual(note.text, self.note.text)
-        self.assertEqual(note.slug, self.note.slug)
-        self.assertEqual(note.author, self.note.author)
+
+        for note in notes:
+            if note.pk == self.note.pk:
+                self.assertEqual(note.title, self.note.title)
+                self.assertEqual(note.text, self.note.text)
+                self.assertEqual(note.slug, self.note.slug)
+                self.assertEqual(note.author, self.note.author)
+                break
+        else:
+            self.fail('Заметка не найдена в списке.')
 
     def test_other_user_does_not_see_foreign_note(self):
         """Пользователь не видит чужую заметку в списке."""
-        response = self.other_client.get(self.LIST_URL)
+        response = self.not_author_client.get(self.LIST_URL)
         notes = response.context['page_obj']
         self.assertNotIn(self.note, notes)
 
