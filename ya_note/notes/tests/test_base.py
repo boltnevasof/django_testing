@@ -56,21 +56,3 @@ class BaseTestCase(TestCase):
             'text': 'Текст заметки',
             'slug': 'another-slug',
         }
-
-        cls.HOME_URL = HOME_URL
-        cls.LOGIN_URL = LOGIN_URL
-        cls.LOGOUT_URL = LOGOUT_URL
-        cls.SIGNUP_URL = SIGNUP_URL
-        cls.LIST_URL = LIST_URL
-        cls.ADD_URL = ADD_URL
-        cls.SUCCESS_URL = SUCCESS_URL
-        cls.DETAIL_URL = DETAIL_URL
-        cls.EDIT_URL = EDIT_URL
-        cls.DELETE_URL = DELETE_URL
-
-        cls.LOGIN_LIST_REDIRECT = LOGIN_LIST_REDIRECT
-        cls.LOGIN_SUCCESS_REDIRECT = LOGIN_SUCCESS_REDIRECT
-        cls.LOGIN_ADD_REDIRECT = LOGIN_ADD_REDIRECT
-        cls.LOGIN_DETAIL_REDIRECT = LOGIN_DETAIL_REDIRECT
-        cls.LOGIN_EDIT_REDIRECT = LOGIN_EDIT_REDIRECT
-        cls.LOGIN_DELETE_REDIRECT = LOGIN_DELETE_REDIRECT

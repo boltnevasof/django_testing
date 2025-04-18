@@ -1,6 +1,14 @@
 from http import HTTPStatus
 
-from .test_base import BaseTestCase
+from .test_base import (
+    BaseTestCase,
+    ADD_URL, LIST_URL, EDIT_URL, DELETE_URL,
+    LOGIN_URL, LOGOUT_URL, SIGNUP_URL,
+    HOME_URL, SUCCESS_URL,
+    LOGIN_LIST_REDIRECT, LOGIN_SUCCESS_REDIRECT,
+    LOGIN_ADD_REDIRECT, LOGIN_DETAIL_REDIRECT,
+    LOGIN_EDIT_REDIRECT, LOGIN_DELETE_REDIRECT, DETAIL_URL
+)
 
 
 class TestRoutes(BaseTestCase):
@@ -8,31 +16,31 @@ class TestRoutes(BaseTestCase):
         """Контроль всех кодов возврата для разных клиентов."""
         cases = [
             # Публичные страницы
-            (self.client, self.HOME_URL, HTTPStatus.OK),
-            (self.client, self.LOGIN_URL, HTTPStatus.OK),
-            (self.client, self.LOGOUT_URL, HTTPStatus.OK),
-            (self.client, self.SIGNUP_URL, HTTPStatus.OK),
+            (self.client, HOME_URL, HTTPStatus.OK),
+            (self.client, LOGIN_URL, HTTPStatus.OK),
+            (self.client, LOGOUT_URL, HTTPStatus.OK),
+            (self.client, SIGNUP_URL, HTTPStatus.OK),
 
             # Защищённые для автора
-            (self.authorized_client, self.LIST_URL, HTTPStatus.OK),
-            (self.authorized_client, self.SUCCESS_URL, HTTPStatus.OK),
-            (self.authorized_client, self.ADD_URL, HTTPStatus.OK),
-            (self.authorized_client, self.DETAIL_URL, HTTPStatus.OK),
-            (self.authorized_client, self.EDIT_URL, HTTPStatus.OK),
-            (self.authorized_client, self.DELETE_URL, HTTPStatus.OK),
+            (self.authorized_client, LIST_URL, HTTPStatus.OK),
+            (self.authorized_client, SUCCESS_URL, HTTPStatus.OK),
+            (self.authorized_client, ADD_URL, HTTPStatus.OK),
+            (self.authorized_client, DETAIL_URL, HTTPStatus.OK),
+            (self.authorized_client, EDIT_URL, HTTPStatus.OK),
+            (self.authorized_client, DELETE_URL, HTTPStatus.OK),
 
             # Защищённые для другого пользователя
-            (self.not_author_client, self.DETAIL_URL, HTTPStatus.NOT_FOUND),
-            (self.not_author_client, self.EDIT_URL, HTTPStatus.NOT_FOUND),
-            (self.not_author_client, self.DELETE_URL, HTTPStatus.NOT_FOUND),
+            (self.not_author_client, DETAIL_URL, HTTPStatus.NOT_FOUND),
+            (self.not_author_client, EDIT_URL, HTTPStatus.NOT_FOUND),
+            (self.not_author_client, DELETE_URL, HTTPStatus.NOT_FOUND),
 
             # Аноним и защищённые страницы (ожидаем редирект)
-            (self.client, self.LIST_URL, HTTPStatus.FOUND),
-            (self.client, self.SUCCESS_URL, HTTPStatus.FOUND),
-            (self.client, self.ADD_URL, HTTPStatus.FOUND),
-            (self.client, self.DETAIL_URL, HTTPStatus.FOUND),
-            (self.client, self.EDIT_URL, HTTPStatus.FOUND),
-            (self.client, self.DELETE_URL, HTTPStatus.FOUND),
+            (self.client, LIST_URL, HTTPStatus.FOUND),
+            (self.client, SUCCESS_URL, HTTPStatus.FOUND),
+            (self.client, ADD_URL, HTTPStatus.FOUND),
+            (self.client, DETAIL_URL, HTTPStatus.FOUND),
+            (self.client, EDIT_URL, HTTPStatus.FOUND),
+            (self.client, DELETE_URL, HTTPStatus.FOUND),
         ]
 
         for client, url, expected_status in cases:
@@ -43,12 +51,12 @@ class TestRoutes(BaseTestCase):
     def test_redirects_for_anonymous(self):
         """Аноним перенаправляется на логин со всех защищённых страниц."""
         protected_redirects = [
-            (self.LIST_URL, self.LOGIN_LIST_REDIRECT),
-            (self.SUCCESS_URL, self.LOGIN_SUCCESS_REDIRECT),
-            (self.ADD_URL, self.LOGIN_ADD_REDIRECT),
-            (self.DETAIL_URL, self.LOGIN_DETAIL_REDIRECT),
-            (self.EDIT_URL, self.LOGIN_EDIT_REDIRECT),
-            (self.DELETE_URL, self.LOGIN_DELETE_REDIRECT),
+            (LIST_URL, LOGIN_LIST_REDIRECT),
+            (SUCCESS_URL, LOGIN_SUCCESS_REDIRECT),
+            (ADD_URL, LOGIN_ADD_REDIRECT),
+            (DETAIL_URL, LOGIN_DETAIL_REDIRECT),
+            (EDIT_URL, LOGIN_EDIT_REDIRECT),
+            (DELETE_URL, LOGIN_DELETE_REDIRECT),
         ]
         for url, expected_redirect in protected_redirects:
             with self.subTest(url=url):

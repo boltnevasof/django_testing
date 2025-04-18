@@ -9,8 +9,12 @@ from news.models import Comment
 
 pytestmark = pytest.mark.django_db
 
+
 COMMENT_FORM_DATA = {'text': 'Комментарий от автора'}
 BAD_COMMENT_TEMPLATE = 'Ты {}!'
+BAD_COMMENTS = [
+    {'text': BAD_COMMENT_TEMPLATE.format(word)} for word in BAD_WORDS
+]
 
 
 def test_anonymous_user_cannot_post_comment(
@@ -35,12 +39,11 @@ def test_authorized_user_can_post_comment(
     assert comment.news == news
 
 
-@pytest.mark.parametrize('bad_word', BAD_WORDS)
+@pytest.mark.parametrize('bad_comment_data', BAD_COMMENTS)
 def test_forbidden_word_not_allowed_in_comment(
-        author_client, news_detail_url, bad_word
+        author_client, news_detail_url, bad_comment_data
 ):
     """Комментарий с запрещённым словом не сохраняется."""
-    bad_comment_data = {'text': BAD_COMMENT_TEMPLATE.format(bad_word)}
     response = author_client.post(news_detail_url, data=bad_comment_data)
     assertFormError(response, 'form', 'text', WARNING)
     assert Comment.objects.count() == 0
